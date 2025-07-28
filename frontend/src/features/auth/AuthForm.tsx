@@ -6,10 +6,8 @@ import {
   loginStart, loginSuccess, loginFailure,
   registerStart, registerSuccess, registerFailure
 } from './authSlice';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:7000/api/auth';
+import axiosInstance from '../../api/axios';
+import { useNavigate } from 'react-router';
 
 const AuthForm: React.FC = () => {
   const dispatch = useDispatch();
@@ -27,7 +25,7 @@ const AuthForm: React.FC = () => {
     if (isLogin) {
       dispatch(loginStart());
       try {
-        const res = await axios.post(`${API_URL}/login`, {
+        const res = await axiosInstance.post('/auth/login', {
           email: form.email,
           password: form.password,
         });
@@ -39,7 +37,7 @@ const AuthForm: React.FC = () => {
     } else {
       dispatch(registerStart());
       try {
-        const res = await axios.post(`${API_URL}/register`, {
+        const res = await axiosInstance.post('/auth/register', {
           name: form.name,
           email: form.email,
           password: form.password,
@@ -123,4 +121,4 @@ const AuthForm: React.FC = () => {
   );
 };
 
-export default AuthForm; 
+export default AuthForm;
