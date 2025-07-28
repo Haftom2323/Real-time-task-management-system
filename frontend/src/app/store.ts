@@ -2,14 +2,14 @@ import { configureStore } from '@reduxjs/toolkit';
 import authReducer from '../features/auth/authSlice';
 import userReducer from '../features/user/userSlice';
 import taskReducer from '../features/admin/taskSlice';
-// import notificationsReducer from '../features/notifications/notificationSlice';
+import notificationsReducer from '../features/notifications/notificationsSlice';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     users: userReducer,
     tasks: taskReducer,
-    // notifications: notificationsReducer,
+    notifications: notificationsReducer,
   },
 });
 

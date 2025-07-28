@@ -5,6 +5,8 @@ import { fetchMyTasks, updateTaskAsync } from '../admin/taskSlice';
 import { Box, Typography, Paper, Chip, Select, MenuItem, CircularProgress } from '@mui/material';
 import DashboardHeader from '../../components/DashboardHeader';
 import { socket } from '../../api/socket';
+import { useSnackbar } from 'notistack';
+import { addNotification } from '../../features/notifications/notificationsSlice';
 
 const statusColors: Record<string, 'default' | 'primary' | 'success' | 'warning'> = {
   pending: 'warning',
@@ -16,6 +18,7 @@ const UserDashboard: React.FC = () => {
   const dispatch = useDispatch();
   const { tasks, loading } = useSelector((state: RootState) => state.tasks);
   const user = useSelector((state: RootState) => state.auth.user);
+  const { enqueueSnackbar } = useSnackbar();
 
   useEffect(() => {
     dispatch(fetchMyTasks() as any);
@@ -23,22 +26,35 @@ const UserDashboard: React.FC = () => {
     if (user?._id) {
       socket.emit('register', user._id);
     }
-    socket.on('task_created', () => {
+    socket.on('task_created', (data) => {
+      enqueueSnackbar('Task created: ' + data.title, { variant: 'info' });
+      dispatch(addNotification({ message: 'Task created: ' + data.title, type: 'info' }));
       dispatch(fetchMyTasks() as any);
     });
-    socket.on('task_updated', () => {
+    socket.on('task_updated', (data) => {
+      enqueueSnackbar('Task updated ' + data.title , { variant: 'success' });
+      dispatch(addNotification({ message: 'Task updated', type: 'success' }));
       dispatch(fetchMyTasks() as any);
     });
-    socket.on('task_deleted', () => {
+    socket.on('task_deleted', (data) => {
+      enqueueSnackbar('Task deleted ' + data.title, { variant: 'warning' });
+      dispatch(addNotification({ message: 'Task deleted', type: 'warning' }));
       dispatch(fetchMyTasks() as any);
     });
+    socket.on('task_assigned', (data) => {
+      enqueueSnackbar('You have been assigned a new task-> ' + data.title, { variant: 'info' });
+      dispatch(addNotification({ message: 'You have been assigned a new task!', type: 'info' }));
+      dispatch(fetchMyTasks() as any);
+    });
+
     return () => {
       socket.disconnect();
       socket.off('task_created');
       socket.off('task_updated');
       socket.off('task_deleted');
+      socket.off('task_assigned');
     };
-  }, [dispatch, user?._id]);
+  }, [dispatch, user?._id, enqueueSnackbar]);
 
   const handleStatusChange = (taskId: string, status: 'pending' | 'in_progress' | 'completed') => {
     dispatch(updateTaskAsync({ _id: taskId, status }) as any);
@@ -46,7 +62,7 @@ const UserDashboard: React.FC = () => {
 
   return (
     <Box>
-      <DashboardHeader title="User Dashboard" />
+      <DashboardHeader title="User Dashboard" showNotification /> 
       <Box sx={{ maxWidth: 800, mx: 'auto', mt: 4 }}>
         <Typography variant="h4" fontWeight={700} mb={3}>My Tasks</Typography>
         {loading ? (

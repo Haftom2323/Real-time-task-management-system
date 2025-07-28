@@ -5,18 +5,18 @@ import TaskList from '../../components/Task/TaskList';
 import DashboardHeader from '../../components/DashboardHeader';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../app/store';
-import { logout } from '../auth/authSlice';
-import { useNavigate } from 'react-router';
 import { socket } from '../../api/socket';
 import axiosInstance from '../../api/axios';
 import { addTask, updateTask, deleteTask } from './taskSlice';
+import { addNotification } from '../../features/notifications/notificationsSlice';
+import { useSnackbar } from 'notistack';
+
 
 const AdminDashboard: React.FC = () => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
   const tasks = useSelector((state: RootState) => state.tasks.tasks);
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const { enqueueSnackbar } = useSnackbar();
 
   useEffect(() => {
     socket.connect();
@@ -29,6 +29,8 @@ const AdminDashboard: React.FC = () => {
         const newTask = res.data.find((t: any) => t._id === data.taskId);
         if (newTask && !tasks.some(t => t._id === newTask._id)) {
           dispatch(addTask(newTask));
+          enqueueSnackbar('Task created: ' + newTask.title, { variant: 'info' });
+          dispatch(addNotification({ message: 'Task created: ' + newTask.title, type: 'info' }));
         }
       } catch {}
     });
@@ -36,29 +38,32 @@ const AdminDashboard: React.FC = () => {
       try {
         const res = await axiosInstance.get(`/tasks`);
         const updatedTask = res.data.find((t: any) => t._id === data.taskId);
-        if (updatedTask) dispatch(updateTask(updatedTask));
+        if (updatedTask) {
+          dispatch(updateTask(updatedTask));
+          enqueueSnackbar('Task updated', { variant: 'success' });
+          dispatch(addNotification({ message: 'Task updated', type: 'success' }));
+        }
       } catch {}
     });
     socket.on('task_deleted', (data: { taskId: string }) => {
       dispatch(deleteTask(data.taskId));
+      enqueueSnackbar('Task deleted', { variant: 'warning' });
+      dispatch(addNotification({ message: 'Task deleted', type: 'warning' }));
     });
+    socket.on('task_assigned', (data: { taskId: string }) => {
+      enqueueSnackbar('You have been assigned a new task!', { variant: 'info' });
+      dispatch(addNotification({ message: 'You have been assigned a new task!', type: 'info' }));
+    });
+
     return () => {
       socket.disconnect();
       socket.off('task_created');
       socket.off('task_updated');
       socket.off('task_deleted');
+      socket.off('task_assigned');
     };
-  }, [dispatch, user?._id, tasks]);
-
-  const handleAvatarClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const handleMenuClose = () => setAnchorEl(null);
-  const handleLogout = () => {
-    dispatch(logout());
-    handleMenuClose();
-    navigate('/login');
-  };
+  }, [dispatch, user?._id, tasks, enqueueSnackbar]);
+ 
 
   return (
     <Box>
