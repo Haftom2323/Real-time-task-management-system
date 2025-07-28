@@ -27,23 +27,23 @@ const UserDashboard: React.FC = () => {
       socket.emit('register', user._id);
     }
     socket.on('task_created', (data) => {
-      enqueueSnackbar('Task created: ' + data.title, { variant: 'info' });
+      enqueueSnackbar(`Task "${data.title}" created and assigned to you` , { variant: 'info' });
       dispatch(addNotification({ message: 'Task created: ' + data.title, type: 'info' }));
       dispatch(fetchMyTasks() as any);
     });
     socket.on('task_updated', (data) => {
-      enqueueSnackbar('Task updated ' + data.title , { variant: 'success' });
-      dispatch(addNotification({ message: 'Task updated', type: 'success' }));
+      enqueueSnackbar(`Task "${data.title}" updated` , { variant: 'success' });
+      dispatch(addNotification({ message: 'Task updated: ' + data.title, type: 'success' }));
       dispatch(fetchMyTasks() as any);
     });
     socket.on('task_deleted', (data) => {
-      enqueueSnackbar('Task deleted ' + data.title, { variant: 'warning' });
-      dispatch(addNotification({ message: 'Task deleted', type: 'warning' }));
+      enqueueSnackbar(`Task "${data.title}" deleted`, { variant: 'warning' });
+      dispatch(addNotification({ message: 'Task deleted: ' + data.title, type: 'warning' }));
       dispatch(fetchMyTasks() as any);
     });
     socket.on('task_assigned', (data) => {
-      enqueueSnackbar('You have been assigned a new task-> ' + data.title, { variant: 'info' });
-      dispatch(addNotification({ message: 'You have been assigned a new task!', type: 'info' }));
+      enqueueSnackbar(`You have been assigned task "${data.title}"`, { variant: 'info' });
+      dispatch(addNotification({ message: 'You have been assigned a new task: ' + data.title, type: 'info' }));
       dispatch(fetchMyTasks() as any);
     });
 

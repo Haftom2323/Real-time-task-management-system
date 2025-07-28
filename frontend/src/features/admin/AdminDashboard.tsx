@@ -40,18 +40,18 @@ const AdminDashboard: React.FC = () => {
         const updatedTask = res.data.find((t: any) => t._id === data.taskId);
         if (updatedTask) {
           dispatch(updateTask(updatedTask));
-          enqueueSnackbar('Task updated', { variant: 'success' });
+          enqueueSnackbar(`Task "${updatedTask.title}" updated`, { variant: 'success' });
           dispatch(addNotification({ message: 'Task updated', type: 'success' }));
         }
       } catch {}
     });
-    socket.on('task_deleted', (data: { taskId: string }) => {
+    socket.on('task_deleted', (data: { taskId: string, title: string }) => {
       dispatch(deleteTask(data.taskId));
-      enqueueSnackbar('Task deleted', { variant: 'warning' });
+      enqueueSnackbar(`Task "${data.title}" deleted`, { variant: 'warning' });
       dispatch(addNotification({ message: 'Task deleted', type: 'warning' }));
     });
-    socket.on('task_assigned', (data: { taskId: string }) => {
-      enqueueSnackbar('You have been assigned a new task!', { variant: 'info' });
+    socket.on('task_assigned', (data: { taskId: string, title: string }) => {
+      enqueueSnackbar('You have been assigned a new task titled: ' + data.title, { variant: 'info' });
       dispatch(addNotification({ message: 'You have been assigned a new task!', type: 'info' }));
     });
 

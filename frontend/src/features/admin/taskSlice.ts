@@ -8,7 +8,6 @@ export interface Task {
   description: string;
   assignedTo?: any;
   status: 'pending' | 'in_progress' | 'completed';
-  // Add other fields as needed
 }
 
 interface TaskState {

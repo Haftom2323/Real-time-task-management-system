@@ -13,8 +13,6 @@ export const getTasksService = async (userId: string, role: string) => {
 
 export const createTaskService = async (data: any) => {
   const task = await Task.create(data);
-  // Notify assigned user (already implemented)
-  // Notify all admins
   const admins = await User.find({ role: 'admin' }, '_id');
   const adminSocketIds = getAdminSocketIds(admins.map(a => String(a._id)));
   adminSocketIds.filter(Boolean).forEach(socketId => {
