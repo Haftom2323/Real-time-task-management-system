@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import connectDB from './config/db';
 import authRoutes from './routes/authRoutes';
 import taskRoutes from './routes/taskRoutes';
+import userRoutes from './routes/userRoutes';
 import http from 'http';
 import { initSocket } from './sockets/socket';
 import cors from 'cors';
@@ -19,6 +20,7 @@ app.use(cors());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/users', userRoutes);
 
 const server = http.createServer(app);
 initSocket(server);

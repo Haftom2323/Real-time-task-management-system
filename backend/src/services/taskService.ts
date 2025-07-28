@@ -24,6 +24,14 @@ export const createTaskService = async (data: any) => {
       assignedTo: task.assignedTo,
     });
   });
+  const assignedSocketId = getUserSocketId(String(task.assignedTo));
+  if (assignedSocketId) {
+    getIO().to(assignedSocketId).emit('task_created', {
+      taskId: task._id,
+      title: task.title,
+      assignedTo: task.assignedTo,
+    });
+  }
   return task;
 };
 
@@ -35,7 +43,14 @@ export const updateTaskService = async (taskId: string, userId: string, role: st
     task = await Task.findOneAndUpdate({ _id: taskId, assignedTo: userId }, update, { new: true });
   }
   if (task) {
-    // Notify assigned user (already implemented)
+    // Notify assigned user (NEW)
+    const assignedSocketId = getUserSocketId(String(task.assignedTo));
+    if (assignedSocketId) {
+      getIO().to(assignedSocketId).emit('task_updated', {
+        taskId: task._id,
+        newStatus: task.status,
+      });
+    }
     // Notify all admins
     const admins = await User.find({ role: 'admin' }, '_id');
     const adminSocketIds = getAdminSocketIds(admins.map(a => String(a._id)));
@@ -55,8 +70,10 @@ export const deleteTaskService = async (taskId: string) => {
     // Notify assigned user
     const socketId = getUserSocketId(String(task.assignedTo));
     if (socketId) {
-      getIO().to(socketId).emit('notification', {
-        message: `Task deleted: ${task.title}`,
+      getIO().to(socketId).emit('task_deleted', {
+        taskId: task._id,
+        title: task.title,
+        assignedTo: task.assignedTo,
       });
     }
     // Notify all admins
@@ -75,4 +92,4 @@ export const deleteTaskService = async (taskId: string) => {
 
 export const getMyTasksService = async (userId: string) => {
   return Task.find({ assignedTo: userId }).populate('createdBy assignedTo', 'name email');
-}; 
+};
