@@ -3,6 +3,8 @@ import dotenv from 'dotenv';
 import connectDB from './config/db';
 import authRoutes from './routes/authRoutes';
 import taskRoutes from './routes/taskRoutes';
+import http from 'http';
+import { initSocket } from './sockets/socket';
 
 // Load environment variables
 dotenv.config();
@@ -17,9 +19,12 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 
+const server = http.createServer(app);
+initSocket(server);
+
 // Connect to DB and start server
 connectDB().then(() => {
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
 }); 

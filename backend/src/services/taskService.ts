@@ -1,5 +1,7 @@
 import Task from '../models/Task';
 import { Types } from 'mongoose';
+import { getIO, getUserSocketId, getAdminSocketIds } from '../sockets/socket';
+import User from '../models/User';
 
 export const getTasksService = async (userId: string, role: string) => {
   if (role === 'admin') {
@@ -10,20 +12,65 @@ export const getTasksService = async (userId: string, role: string) => {
 };
 
 export const createTaskService = async (data: any) => {
-  return Task.create(data);
+  const task = await Task.create(data);
+  // Notify assigned user (already implemented)
+  // Notify all admins
+  const admins = await User.find({ role: 'admin' }, '_id');
+  const adminSocketIds = getAdminSocketIds(admins.map(a => String(a._id)));
+  adminSocketIds.filter(Boolean).forEach(socketId => {
+    getIO().to(socketId as string).emit('task_created', {
+      taskId: task._id,
+      title: task.title,
+      assignedTo: task.assignedTo,
+    });
+  });
+  return task;
 };
 
 export const updateTaskService = async (taskId: string, userId: string, role: string, update: any) => {
+  let task;
   if (role === 'admin') {
-    return Task.findByIdAndUpdate(taskId, update, { new: true });
+    task = await Task.findByIdAndUpdate(taskId, update, { new: true });
   } else {
-    // User can only update their own assigned tasks
-    return Task.findOneAndUpdate({ _id: taskId, assignedTo: userId }, update, { new: true });
+    task = await Task.findOneAndUpdate({ _id: taskId, assignedTo: userId }, update, { new: true });
   }
+  if (task) {
+    // Notify assigned user (already implemented)
+    // Notify all admins
+    const admins = await User.find({ role: 'admin' }, '_id');
+    const adminSocketIds = getAdminSocketIds(admins.map(a => String(a._id)));
+    adminSocketIds.filter(Boolean).forEach(socketId => {
+      getIO().to(socketId as string).emit('task_updated', {
+        taskId: task._id,
+        newStatus: task.status,
+      });
+    });
+  }
+  return task;
 };
 
 export const deleteTaskService = async (taskId: string) => {
-  return Task.findByIdAndDelete(taskId);
+  const task = await Task.findByIdAndDelete(taskId);
+  if (task) {
+    // Notify assigned user
+    const socketId = getUserSocketId(String(task.assignedTo));
+    if (socketId) {
+      getIO().to(socketId).emit('notification', {
+        message: `Task deleted: ${task.title}`,
+      });
+    }
+    // Notify all admins
+    const admins = await User.find({ role: 'admin' }, '_id');
+    const adminSocketIds = getAdminSocketIds(admins.map(a => String(a._id)));
+    adminSocketIds.filter(Boolean).forEach(socketId => {
+      getIO().to(socketId as string).emit('task_deleted', {
+        taskId: task._id,
+        title: task.title,
+        assignedTo: task.assignedTo,
+      });
+    });
+  }
+  return task;
 };
 
 export const getMyTasksService = async (userId: string) => {
