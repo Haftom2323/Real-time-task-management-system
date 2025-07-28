@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node dist/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "seed:admin": "ts-node src/scripts/seedAdmin.ts"
   },
   "author": "",
   "license": "ISC",
@@ -14,7 +15,9 @@
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.5",
-    "socket.io": "^4.8.1"
+    "socket.io": "^4.8.1",
+    "bcrypt": "^5.1.0",
+    "dotenv": "^16.0.0"
   },
   "devDependencies": {
     "typescript": "^5.0.0",
@@ -24,6 +27,8 @@
     "@types/node": "^20.0.0",
     "@types/jsonwebtoken": "^9.0.0",
     "@types/socket.io": "^3.0.0",
-    "@types/mongoose": "^5.11.97"
+    "@types/mongoose": "^5.11.97",
+    "@types/bcrypt": "^5.0.0",
+    "@types/dotenv": "^8.2.0"
   }
 }
