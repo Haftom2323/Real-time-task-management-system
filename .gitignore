@@ -1,0 +1,21 @@
+# Node modules (ignore for both backend and frontend)
+**/node_modules/
+
+# Environment variables
+**/.env
+**/.env.*  # in case you use .env.local, .env.production, etc.
+
+# Logs
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+
+# Optional OS/System files
+.DS_Store
+Thumbs.db
+
+# Vite build output (React frontend)
+frontend/dist/
+
+# VSCode settings (optional)
+.vscode/
