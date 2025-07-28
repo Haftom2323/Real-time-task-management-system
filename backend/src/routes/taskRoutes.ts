@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getTasks, createTask, updateTask, deleteTask } from '../controllers/taskController';
+import { getTasks, createTask, updateTask, deleteTask, getMyTasks } from '../controllers/taskController';
 import { authenticateJWT } from '../middlewares/authMiddleware';
 import { roleMiddleware } from '../middlewares/roleMiddleware';
 
@@ -10,6 +10,7 @@ router.use(authenticateJWT);
 
 // GET: admin sees all, user sees own
 router.get('/', getTasks);
+router.get('/my', getMyTasks);
 
 // POST: admin only
 router.post('/', roleMiddleware('admin'), createTask);

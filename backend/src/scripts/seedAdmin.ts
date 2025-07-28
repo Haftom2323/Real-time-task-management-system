@@ -10,7 +10,7 @@ const seedAdmin = async () => {
   await connectDB();
   const name = process.env.ADMIN_NAME || 'Admin';
   const email = process.env.ADMIN_EMAIL || 'admin@gmail.com';
-  const password = process.env.ADMIN_PASSWORD || 'admin123';
+  const password = process.env.ADMIN_PASSWORD || '12345678';
 
   const existing = await User.findOne({ email });
   if (existing) {

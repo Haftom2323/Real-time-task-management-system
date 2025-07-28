@@ -24,4 +24,8 @@ export const updateTaskService = async (taskId: string, userId: string, role: st
 
 export const deleteTaskService = async (taskId: string) => {
   return Task.findByIdAndDelete(taskId);
+};
+
+export const getMyTasksService = async (userId: string) => {
+  return Task.find({ assignedTo: userId }).populate('createdBy assignedTo', 'name email');
 }; 

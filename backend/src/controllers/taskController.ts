@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getTasksService, createTaskService, updateTaskService, deleteTaskService } from '../services/taskService';
+import { getTasksService, createTaskService, updateTaskService, deleteTaskService, getMyTasksService } from '../services/taskService';
 import { AuthRequest } from '../middlewares/authMiddleware';
 
 export const getTasks = async (req: AuthRequest, res: Response) => {
@@ -46,5 +46,14 @@ export const deleteTask = async (req: AuthRequest, res: Response) => {
     res.json({ message: 'Task deleted' });
   } catch (err) {
     res.status(500).json({ message: 'Failed to delete task' });
+  }
+};
+
+export const getMyTasks = async (req: AuthRequest, res: Response) => {
+  try {
+    const tasks = await getMyTasksService(req.user!.userId);
+    res.json(tasks);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch user tasks' });
   }
 }; 
