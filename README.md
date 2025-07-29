@@ -72,7 +72,7 @@ cd Real-time-task-management-system
 ```bash
 cd backend
 npm install
-Configure your .env
+#Configure your .env
 npm run dev
 ```
 - The backend runs on `http://localhost:5000` by default.
@@ -107,5 +107,5 @@ JWT_EXPIRES_IN=1d
 ## Default Admin User
 
 If you run the backend for the first time, a default admin user may be seeded (see `/backend/src/scripts/seedAdmin.ts`).  
-Check the script or `.env` for default credentials.
+Check the scripts folder for the sample seeding script, after creaing the first admin (super admin) using cli or seeding, the admin can then create other admins and users
 
