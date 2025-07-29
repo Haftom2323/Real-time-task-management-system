@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { 
+  createUser,
   getAllUsers, 
   getUserById, 
   updateUser, 
@@ -14,6 +15,7 @@ const router = Router();
 router.use(authenticateJWT);
 
 // Admin-only routes
+router.post('/', roleMiddleware('admin'), createUser);
 router.get('/', roleMiddleware('admin'), getAllUsers);
 router.get('/:id', roleMiddleware('admin'), getUserById);
 router.put('/:id', roleMiddleware('admin'), updateUser);

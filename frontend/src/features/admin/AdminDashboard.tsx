@@ -1,23 +1,36 @@
 import React, { useEffect, useState } from 'react';
 import { 
   Box, 
-  Button, 
-  Paper, 
   Typography,
   Menu,
   MenuItem,
-  Tooltip
+  Drawer,
+  CssBaseline,
+  AppBar,
+  Toolbar,
+  useTheme,
+  IconButton,
+  Avatar,
+  Stack,
+  Chip,
+  Divider,
+  Paper,
+  Button
 } from '@mui/material';
 import { 
   Add as AddIcon,
-  FilterList as FilterListIcon
+  FilterList as FilterListIcon,
+  Menu as MenuIcon,
+  Logout as LogoutIcon,
 } from '@mui/icons-material';
-import TaskList from '../../components/Task/TaskList';
-import TaskFormModal from '../../components/Task/TaskFormModal';
-import DashboardHeader from '../../components/DashboardHeader';
+import { useNavigate, useLocation, Routes, Route, Navigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../app/store';
 import { socket } from '../../api/socket';
+import Sidebar from '../../components/Sidebar/Sidebar';
+import TaskList from '../../components/Task/TaskList';
+import TaskFormModal from '../../components/Task/TaskFormModal';
+import UserList from './UserList';
 import axiosInstance from '../../api/axios';
 import { 
   addTask, 
@@ -28,7 +41,8 @@ import {
 } from './taskSlice';
 import { addNotification } from '../../features/notifications/notificationsSlice';
 import { useSnackbar } from 'notistack';
-
+import { logout } from '../../features/auth/authSlice';
+import NotificationDrawer from '../../components/Notification/NotificationDrawer';
 
 type StatusOption = {
   value: 'all' | 'pending' | 'in_progress' | 'completed';
@@ -42,23 +56,53 @@ const statusOptions: StatusOption[] = [
   { value: 'completed', label: 'Completed' }
 ];
 
+const drawerWidth = 240;
+
 const AdminDashboard: React.FC = () => {
+  const theme = useTheme();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
+  
   const user = useSelector((state: RootState) => state.auth.user);
   const { tasks, loading, filters } = useSelector((state: RootState) => state.tasks);
   const { enqueueSnackbar } = useSnackbar();
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<any>(null);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const openFilter = Boolean(anchorEl);
+  
+  const openFilter = Boolean(filterAnchorEl);
+  const openProfile = Boolean(anchorEl);
 
-  const handleFilterClick = (event: React.MouseEvent<HTMLElement>) => {
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
+
+  const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
 
-  const handleFilterClose = () => {
+  const handleProfileMenuClose = () => {
     setAnchorEl(null);
+  };
+
+
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate('/login');
+  };
+
+  const handleFilterClick = (event: React.MouseEvent<HTMLElement>) => {
+    setFilterAnchorEl(event.currentTarget);
+  };
+
+  const handleFilterClose = () => {
+    setFilterAnchorEl(null);
   };
 
   const handleFilterSelect = (status: 'pending' | 'in_progress' | 'completed' | 'all' | undefined) => {
@@ -66,21 +110,32 @@ const AdminDashboard: React.FC = () => {
     handleFilterClose();
   };
 
-  const handleOpenCreateModal = () => {
-    setEditingTask(null);
-    setIsCreateModalOpen(true);
-  };
-  
+  const drawer = (
+    <div>
+      <Toolbar 
+        sx={{ 
+          minHeight: '64px !important',
+          display: { xs: 'none', sm: 'flex' },
+        }}
+      />
+      <Divider />
+      <Sidebar />
+    </div>
+  );
+
+  const container = window !== undefined ? () => window.document.body : undefined;
+
+
   const handleCloseCreateModal = () => {
     setIsCreateModalOpen(false);
     setEditingTask(null);
   };
-  
+
   const handleEditTask = (task: any) => {
     setEditingTask(task);
     setIsCreateModalOpen(true);
   };
-  
+
   const handleTaskSubmit = async (taskData: any) => {
     try {
       if (editingTask) {
@@ -186,79 +241,275 @@ const AdminDashboard: React.FC = () => {
       socket.off('task_assigned');
     };
   }, [dispatch, user?._id, tasks, enqueueSnackbar]);
- 
 
   return (
-    <Box>
-      <DashboardHeader title="Admin Dashboard" showNotification />
-      <Box sx={{ maxWidth: 1200, mx: 'auto', mt: 4, px: 2 }}>
-        <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h5" fontWeight={600}>Task Management</Typography>
-            <Box display="flex" gap={2}>
-              <Tooltip title="Filter tasks">
-                <Button
-                  variant="outlined"
-                  color="inherit"
-                  startIcon={<FilterListIcon />}
-                  onClick={handleFilterClick}
-                  sx={{ textTransform: 'none' }}
-                >
-                  {!filters.status || filters.status === 'all' ? 'Filter' : filters.status.replace('_', ' ')}
-                </Button>
-              </Tooltip>
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<AddIcon />}
-                onClick={handleOpenCreateModal}
-                sx={{ textTransform: 'none' }}
+    <Box sx={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
+      <CssBaseline />
+      
+      {/* Sidebar with primary color */}
+      <Box
+        component="nav"
+        sx={{ 
+          width: { sm: drawerWidth },
+          flexShrink: 0,
+          position: 'fixed',
+          height: '100vh',
+          bgcolor: 'primary.main',
+          color: 'primary.contrastText',
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+        }}
+      >
+        <Drawer
+          container={container}
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{
+            keepMounted: true,
+          }}
+          sx={{
+            display: { xs: 'block', sm: 'none' },
+            '& .MuiDrawer-paper': { 
+              boxSizing: 'border-box',
+              width: drawerWidth,
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+            },
+          }}
+        >
+          {drawer}
+        </Drawer>
+        <Drawer
+          variant="permanent"
+          sx={{
+            display: { xs: 'none', sm: 'block' },
+            '& .MuiDrawer-paper': { 
+              boxSizing: 'border-box',
+              width: drawerWidth,
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              borderRight: 'none',
+            },
+          }}
+          open
+        >
+          {drawer}
+        </Drawer>
+      </Box>
+
+      {/* Main Content */}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: '100vh',
+          width: '100%',
+          ml: { sm: `${drawerWidth}px` },
+          maxWidth: { sm: `calc(100% - ${drawerWidth}px)` },
+        }}
+      >
+        {/* Top App Bar */}
+        <AppBar
+          position="static"
+          elevation={0}
+          sx={{
+            bgcolor: 'background.paper',
+            color: 'text.primary',
+            borderBottom: `1px solid ${theme.palette.divider}`,
+          }}
+        >
+          <Toolbar>
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2, display: { sm: 'none' } }}
+            >
+              <MenuIcon />
+            </IconButton>
+            
+            <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+              {location.pathname.includes('users') ? 'User Management' : 'Real-TimeTask Management'}
+            </Typography>
+            
+            <Stack direction="row" spacing={2} alignItems="center">
+              <NotificationDrawer />
+              
+              <Chip
+                avatar={
+                  <Avatar sx={{ bgcolor: theme.palette.primary.main }}>
+                    {user?.name?.[0]?.toUpperCase() || 'U'}
+                  </Avatar>
+                }
+                label={user?.name || 'User'}
+                variant="outlined"
+                onClick={handleProfileMenuOpen}
+                aria-controls={openProfile ? 'profile-menu' : undefined}
+                aria-haspopup="true"
+                aria-expanded={openProfile ? 'true' : undefined}
+                id="profile-button"
+                sx={{ 
+                  cursor: 'pointer',
+                  '&:hover': {
+                    backgroundColor: 'action.hover',
+                  },
+                }}
+              />
+              
+              <Menu
+                id="profile-menu"
+                anchorEl={anchorEl}
+                open={openProfile}
+                onClose={handleProfileMenuClose}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'right',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+                slotProps={{
+                  paper: {
+                    elevation: 0,
+                    sx: {
+                      overflow: 'visible',
+                      filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.16))',
+                      mt: 1.5,
+                      minWidth: 180,
+                      '& .MuiAvatar-root': {
+                        width: 32,
+                        height: 32,
+                        ml: -0.5,
+                        mr: 1,
+                      },
+                      '&:before': {
+                        content: '""',
+                        display: 'block',
+                        position: 'absolute',
+                        top: 0,
+                        right: 14,
+                        width: 10,
+                        height: 10,
+                        bgcolor: 'background.paper',
+                        transform: 'translateY(-50%) rotate(45deg)',
+                        zIndex: 0,
+                      },
+                    },
+                  },
+                }}
               >
-                Create Task
-              </Button>
-            </Box>
-          </Box>
-          <Menu
-            anchorEl={anchorEl}
-            open={openFilter}
-            onClose={handleFilterClose}
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: 'right',
-            }}
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: 'right',
-            }}
-          >
-            {statusOptions.map((option) => (
-              <MenuItem 
-                key={option.value} 
-                onClick={() => handleFilterSelect(option.value)}
-                selected={filters.status === option.value}
-              >
-                {option.label}
-              </MenuItem>
-            ))}
-          </Menu>
-        </Box>
-        
-        <Paper elevation={2} sx={{ p: 3, minHeight: 400 }}>
-          <TaskList 
-            isAdmin 
-            onEdit={handleEditTask}
-            loading={loading}
+                <MenuItem onClick={handleProfileMenuClose}>
+                  <Avatar sx={{ width: 24, height: 24, mr: 1, bgcolor: theme.palette.primary.main }}>
+                    {user?.name?.[0]?.toUpperCase() || 'U'}
+                  </Avatar>
+                  {user?.name || 'User'}
+                </MenuItem>
+                <Divider />
+                <MenuItem onClick={handleLogout}>
+                  <LogoutIcon fontSize="small" sx={{ mr: 1 }} />
+                  Logout
+                </MenuItem>
+              </Menu>
+            </Stack>
+          </Toolbar>
+        </AppBar>
+
+        {/* Page Content */}
+        <Box sx={{ 
+          flex: 1, 
+          p: 3, 
+          bgcolor: 'background.default',
+          width: '100%',
+          maxWidth: '100%',
+          overflowX: 'hidden',
+          boxSizing: 'border-box'
+        }}>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
+                  <Paper elevation={0} sx={{ p: 3, minHeight: 400 }}>
+                    <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Box>
+                        <Typography variant="h5" component="h1" sx={{ mb: 1 }}>
+                          Tasks
+                        </Typography>
+                        <Chip 
+                          label={`${tasks.length} tasks`} 
+                          size="small" 
+                          variant="outlined" 
+                          sx={{ mr: 1 }}
+                        />
+                        <Chip 
+                          label={filters.status ? statusOptions.find(opt => opt.value === filters.status)?.label : 'All Statuses'} 
+                          size="small" 
+                          variant="outlined"
+                          onClick={handleFilterClick}
+                          deleteIcon={<FilterListIcon fontSize="small" />}
+                          onDelete={handleFilterClick}
+                        />
+                        <Menu
+                          id="filter-menu"
+                          anchorEl={filterAnchorEl}
+                          open={openFilter}
+                          onClose={handleFilterClose}
+                          anchorOrigin={{
+                            vertical: 'bottom',
+                            horizontal: 'left',
+                          }}
+                        >
+                          {statusOptions.map((option) => (
+                            <MenuItem
+                              key={option.value}
+                              onClick={() => handleFilterSelect(option.value)}
+                              selected={filters.status === option.value || (!filters.status && option.value === 'all')}
+                            >
+                              {option.label}
+                            </MenuItem>
+                          ))}
+                        </Menu>
+                      </Box>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        startIcon={<AddIcon />}
+                        onClick={() => {
+                          setEditingTask(null);
+                          setIsCreateModalOpen(true);
+                        }}
+                        sx={{ textTransform: 'none' }}
+                      >
+                        New Task
+                      </Button>
+                    </Box>
+                    
+                    <TaskList 
+                      isAdmin 
+                      onEdit={handleEditTask}
+                      loading={loading}
+                    />
+                  </Paper>
+                </Box>
+              }
+            />
+            <Route path="/users" element={<UserList />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+          
+          {/* Task Form Modal */}
+          <TaskFormModal
+            open={isCreateModalOpen}
+            onClose={handleCloseCreateModal}
+            task={editingTask}
+            onSubmit={handleTaskSubmit}
+            isEditing={!!editingTask}
           />
-        </Paper>
-        
-        {/* Task Form Modal */}
-        <TaskFormModal
-          open={isCreateModalOpen}
-          onClose={handleCloseCreateModal}
-          task={editingTask}
-          onSubmit={handleTaskSubmit}
-          isEditing={!!editingTask}
-        />
+        </Box>
       </Box>
     </Box>
   );
