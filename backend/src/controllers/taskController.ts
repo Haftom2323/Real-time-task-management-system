@@ -21,7 +21,7 @@ export const createTask = async (req: AuthRequest, res: Response) => {
       createdBy: req.user!.userId,
       assignedTo
     });
-    res.status(201).json(task);
+    res.status(201).json({ ...task.toObject(), createdBy: req.user!.userId });
   } catch (err) {
     res.status(500).json({ message: 'Failed to create task' });
   }
@@ -33,7 +33,7 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
     const update = req.body;
     const task = await updateTaskService(id, req.user!.userId, req.user!.role, update);
     if (!task) return res.status(404).json({ message: 'Task not found or not permitted' });
-    res.json(task);
+    res.json({ ...task.toObject(), updatedBy: req.user!.userId });
   } catch (err) {
     res.status(500).json({ message: 'Failed to update task' });
   }
@@ -42,8 +42,9 @@ export const updateTask = async (req: AuthRequest, res: Response) => {
 export const deleteTask = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    await deleteTaskService(id);
-    res.json({ message: 'Task deleted' });
+    const task = await deleteTaskService(id, req.user!.userId);
+    if (!task) return res.status(404).json({ message: 'Task not found' });
+    res.json({ ...task.toObject(), deletedBy: req.user!.userId });
   } catch (err) {
     res.status(500).json({ message: 'Failed to delete task' });
   }

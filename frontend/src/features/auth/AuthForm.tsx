@@ -7,7 +7,7 @@ import {
   registerStart, registerSuccess, registerFailure
 } from './authSlice';
 import axiosInstance from '../../api/axios';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 
 const AuthForm: React.FC = () => {
   const dispatch = useDispatch();

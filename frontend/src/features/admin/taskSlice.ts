@@ -2,24 +2,45 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import axiosInstance from '../../api/axios';
 
+export interface UserRef {
+  _id: string;
+  name: string;
+  email: string;
+}
+
 export interface Task {
   _id: string;
   title: string;
   description: string;
-  assignedTo?: any;
+  assignedTo?: UserRef | string;
   status: 'pending' | 'in_progress' | 'completed';
+  createdBy?: UserRef | string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface FilterState {
+  status?: 'all' | 'pending' | 'in_progress' | 'completed';
+  assignedTo?: string;
+  search?: string;
 }
 
 interface TaskState {
   tasks: Task[];
   loading: boolean;
   error: string | null;
+  filters: FilterState;
 }
 
 const initialState: TaskState = {
   tasks: [],
   loading: false,
   error: null,
+  filters: {
+    status: 'all',
+    assignedTo: undefined,
+    search: ''
+  },
 };
 
 export const fetchTasks = createAsyncThunk('tasks/fetchTasks', async (_, { rejectWithValue }) => {
@@ -72,6 +93,17 @@ const taskSlice = createSlice({
       const idx = state.tasks.findIndex(t => t._id === action.payload._id);
       if (idx !== -1) state.tasks[idx] = action.payload;
     },
+    setFilters: {
+      reducer(state, action: PayloadAction<Partial<FilterState>>) {
+        state.filters = {
+          ...state.filters,
+          ...action.payload
+        };
+      },
+      prepare(filters: Partial<FilterState>) {
+        return { payload: filters };
+      }
+    },
   },
   extraReducers: builder => {
     builder
@@ -109,5 +141,5 @@ const taskSlice = createSlice({
   },
 });
 
-export const { addTask, deleteTask, updateTask } = taskSlice.actions;
+export const { addTask, deleteTask, updateTask, setFilters } = taskSlice.actions;
 export default taskSlice.reducer; 

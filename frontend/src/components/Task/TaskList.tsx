@@ -29,14 +29,23 @@ const statusColors: Record<string, 'default' | 'primary' | 'success' | 'warning'
   completed: 'success',
 };
 
-const TaskList: React.FC<{ isAdmin?: boolean; refresh?: boolean }> = ({ isAdmin }) => {
+interface TaskListProps {
+  isAdmin?: boolean;
+  refresh?: boolean;
+  onEdit?: (task: any) => void;
+  loading?: boolean;
+}
+
+const TaskList: React.FC<TaskListProps> = ({ isAdmin, onEdit, loading: isLoading = false }) => {
   const dispatch = useDispatch();
-  const { tasks, loading } = useSelector((state: RootState) => state.tasks);
+  const { tasks, loading: tasksLoading, filters } = useSelector((state: RootState) => state.tasks);
   const { users } = useSelector((state: RootState) => state.users);
-  const [filter, setFilter] = useState('all');
   const [editTask, setEditTask] = useState<Task | null>(null);
   const [editForm, setEditForm] = useState<{ title: string; description: string; assignedTo: string; status: 'pending' | 'in_progress' | 'completed' | '' }>({ title: '', description: '', assignedTo: '', status: '' });
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  
+  // Use the loading prop if provided, otherwise fall back to Redux loading state
+  const loading = isLoading || tasksLoading;
 
   useEffect(() => {
     dispatch(fetchTasks() as any);
@@ -66,7 +75,14 @@ const TaskList: React.FC<{ isAdmin?: boolean; refresh?: boolean }> = ({ isAdmin 
     };
   }, [dispatch]);
 
-  const filteredTasks = filter === 'all' ? tasks : tasks.filter(t => t.status === filter);
+  // Filter tasks based on the current filters
+  const filteredTasks = tasks.filter(task => {
+    if (filters.status && filters.status !== 'all' && task.status !== filters.status) {
+      return false;
+    }
+    // Add additional filter conditions here if needed (e.g., assignedTo, search)
+    return true;
+  });
 
   const handleEdit = (task: Task) => {
     setEditTask(task);
@@ -108,19 +124,8 @@ const TaskList: React.FC<{ isAdmin?: boolean; refresh?: boolean }> = ({ isAdmin 
 
   return (
     <Box>
-      <Box display="flex" alignItems="center" mb={2} gap={2}>
-        <Typography variant="subtitle1" fontWeight={500}>Filter by status:</Typography>
-        <Select
-          size="small"
-          value={filter}
-          onChange={e => setFilter(e.target.value)}
-          sx={{ minWidth: 140 }}
-        >
-          <MenuItem value="all">All</MenuItem>
-          <MenuItem value="pending">Pending</MenuItem>
-          <MenuItem value="in_progress">In Progress</MenuItem>
-          <MenuItem value="completed">Completed</MenuItem>
-        </Select>
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="h6">Tasks</Typography>
       </Box>
       {loading ? (
         <Box display="flex" justifyContent="center" py={4}><CircularProgress /></Box>

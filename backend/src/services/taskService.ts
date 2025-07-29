@@ -13,8 +13,10 @@ export const getTasksService = async (userId: string, role: string) => {
 
 export const createTaskService = async (data: any) => {
   const task = await Task.create(data);
-  const admins = await User.find({ role: 'admin' }, '_id');
+  const admins = await User.find({ role: 'admin', _id: { $ne: data.createdBy } }, '_id');
   const adminSocketIds = getAdminSocketIds(admins.map(a => String(a._id)));
+  
+  // Only send notification to admins who didn't create the task
   adminSocketIds.filter(Boolean).forEach(socketId => {
     getIO().to(socketId as string).emit('task_created', {
       taskId: task._id,
@@ -22,13 +24,17 @@ export const createTaskService = async (data: any) => {
       assignedTo: task.assignedTo,
     });
   });
-  const assignedSocketId = getUserSocketId(String(task.assignedTo));
-  if (assignedSocketId) {
-    getIO().to(assignedSocketId).emit('task_created', {
-      taskId: task._id,
-      title: task.title,
-      assignedTo: task.assignedTo,
-    });
+  
+  // Only send notification to assigned user if they're not the creator
+  if (String(task.assignedTo) !== String(task.createdBy)) {
+    const assignedSocketId = getUserSocketId(String(task.assignedTo));
+    if (assignedSocketId) {
+      getIO().to(assignedSocketId).emit('task_created', {
+        taskId: task._id,
+        title: task.title,
+        assignedTo: task.assignedTo,
+      });
+    }
   }
   return task;
 };
@@ -41,41 +47,58 @@ export const updateTaskService = async (taskId: string, userId: string, role: st
     task = await Task.findOneAndUpdate({ _id: taskId, assignedTo: userId }, update, { new: true });
   }
   if (task) {
-    const socketId = getUserSocketId(String(task.assignedTo));
-    if (socketId) {
-      getIO().to(socketId).emit('task_updated', {
-        taskId: task._id,
-        title: task.title,
-        assignedTo: task.assignedTo,
-      });
+    // Only notify assigned user if they're not the one who updated
+    if (String(task.assignedTo) !== String(userId)) {
+      const socketId = getUserSocketId(String(task.assignedTo));
+      if (socketId) {
+        getIO().to(socketId).emit('task_updated', {
+          taskId: task._id,
+          title: task.title,
+          assignedTo: task.assignedTo,
+        });
+      }
     }
-    // Notify all admins
-    const admins = await User.find({ role: 'admin' }, '_id');
+    
+    // Notify all admins except the one who updated
+    const admins = await User.find({ 
+      role: 'admin', 
+      _id: { $ne: userId } 
+    }, '_id');
+    
     const adminSocketIds = getAdminSocketIds(admins.map(a => String(a._id)));
     adminSocketIds.filter(Boolean).forEach(socketId => {
       getIO().to(socketId as string).emit('task_updated', {
         taskId: task._id,
         newStatus: task.status,
+        title: task.title,
+        updatedBy: userId
       });
     });
   }
   return task;
 };
 
-export const deleteTaskService = async (taskId: string) => {
+export const deleteTaskService = async (taskId: string, userId: string) => {
   const task = await Task.findByIdAndDelete(taskId);
   if (task) {
-    // Notify assigned user
-    const socketId = getUserSocketId(String(task.assignedTo));
-    if (socketId) {
-      getIO().to(socketId).emit('task_deleted', {
-        taskId: task._id,
-        title: task.title,
-        assignedTo: task.assignedTo,
-      });
+    // Only notify assigned user if they're not the one who deleted
+    if (String(task.assignedTo) !== String(userId)) {
+      const socketId = getUserSocketId(String(task.assignedTo));
+      if (socketId) {
+        getIO().to(socketId).emit('task_deleted', {
+          taskId: task._id,
+          title: task.title,
+          assignedTo: task.assignedTo,
+        });
+      }
     }
-    // Notify all admins
-    const admins = await User.find({ role: 'admin' }, '_id');
+    
+    // Notify all admins except the one who deleted
+    const admins = await User.find({ 
+      role: 'admin', 
+      _id: { $ne: userId } 
+    }, '_id');
+    
     const adminSocketIds = getAdminSocketIds(admins.map(a => String(a._id)));
     adminSocketIds.filter(Boolean).forEach(socketId => {
       getIO().to(socketId as string).emit('task_deleted', {
