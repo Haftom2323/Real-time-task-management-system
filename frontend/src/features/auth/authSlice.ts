@@ -67,6 +67,9 @@ const authSlice = createSlice({
       state.error = null;
       localStorage.removeItem('auth');
     },
+    clearError(state) {
+      state.error = null;
+    },
   },
 });
 
@@ -78,6 +81,7 @@ export const {
   registerSuccess,
   registerFailure,
   logout,
+  clearError,
 } = authSlice.actions;
 
 export default authSlice.reducer; 
