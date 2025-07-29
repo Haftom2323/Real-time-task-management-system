@@ -11,15 +11,12 @@ import {
   CircularProgress, 
   Menu, 
   MenuItem, 
-  TextField, 
-  InputAdornment,
   IconButton,
   Tooltip
 } from '@mui/material';
 import { 
   FilterList as FilterListIcon, 
   Edit as EditIcon, 
-  Check as CheckIcon,
   Close as CloseIcon
 } from '@mui/icons-material';
 import DashboardHeader from '../../components/DashboardHeader';
@@ -57,7 +54,7 @@ const UserDashboard: React.FC = () => {
     socket.on('task_created', (data: { title: string, createdBy: string }) => {
       // Only show notification if the task wasn't created by the current user
       if (data.createdBy !== user?._id) {
-        enqueueSnackbar(`Task "${data.title}" created and assigned to you`, { variant: 'info' });
+        enqueueSnackbar(`Task "${data.title}" created`, { variant: 'info' });
         dispatch(addNotification({ 
           message: 'Task created: ' + data.title, 
           type: 'info' 
