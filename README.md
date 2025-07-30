@@ -33,6 +33,7 @@ real-time-task-management-system/
 │   │   └── ...
 │   ├── package.json
 │   └── ...
+├──Postman/Real-time task manager.postman_collection.json
 │
 └── README.md     # Project documentation
 ```
