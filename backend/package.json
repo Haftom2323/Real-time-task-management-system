@@ -1,7 +1,7 @@
 {
   "name": "real-time-task-management-backend",
   "version": "1.0.0",
-  "main": "app.ts",
+  "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev src/index.ts",
     "dev:nodemon": "nodemon --watch src --exec ts-node src/index.ts",
