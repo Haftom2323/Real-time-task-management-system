@@ -8,9 +8,16 @@ dotenv.config();
 
 const seedAdmin = async () => {
   await connectDB();
-  const name = process.env.ADMIN_NAME || 'Admin';
-  const email = process.env.ADMIN_EMAIL || 'admin@gmail.com';
-  const password = process.env.ADMIN_PASSWORD || '12345678';
+
+  const name = process.env.ADMIN_NAME;
+  const email = process.env.ADMIN_EMAIL;
+  const password = process.env.ADMIN_PASSWORD;
+
+  if (!name || !email || !password) {
+    console.error('Missing ADMIN_NAME, ADMIN_EMAIL, or ADMIN_PASSWORD in environment variables.');
+    mongoose.disconnect();
+    process.exit(1);
+  }
 
   const existing = await User.findOne({ email });
   if (existing) {
@@ -21,8 +28,9 @@ const seedAdmin = async () => {
 
   const hashed = await bcrypt.hash(password, 10);
   await User.create({ name, email, password: hashed, role: 'admin' });
-  console.log('Admin user created:', email);
+
+  console.log('✅ Admin user created:', email);
   mongoose.disconnect();
 };
 
-seedAdmin(); 
+seedAdmin();
